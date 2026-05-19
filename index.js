@@ -1,6 +1,6 @@
 const express = require("express");
 const dotenv = require("dotenv");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 dotenv.config();
 const app = express();
 const cors = require("cors");
@@ -29,12 +29,31 @@ async function run() {
     await client.connect();
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
+
+
+    const db = client.db('petsdb')
+    const petsCollection = db.collection('pets')
+
+    // -------
+    app.get('/pets', async(req, res)=>{
+        const cursor=  petsCollection.find();
+        const result = await cursor.toArray();
+        res.send(result)
+    })
+    
+
+
+
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!",
     );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
+
+
+
+
   }
 }
 run().catch(console.dir);
