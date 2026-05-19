@@ -33,6 +33,7 @@ async function run() {
 
     const db = client.db('petsdb')
     const petsCollection = db.collection('pets')
+    const adoptingCollection = db.collection('adopting')
 
     // -------
     app.get('/pets', async(req, res)=>{
@@ -40,12 +41,25 @@ async function run() {
         const result = await cursor.toArray();
         res.send(result)
     })
-
+// -------
+    app.get('/pets/:petId', async(req, res)=>{
+        const{petId} = req.params;
+        const query = {_id: new ObjectId(petId)}
+        const result = await petsCollection.findOne(query);
+        res.send(result)
+    })
     
     // --------------
     app.get('/featured', async(req, res)=>{
         const cursor=  petsCollection.find().limit(6);
         const result = await cursor.toArray();
+        res.send(result)
+    })
+
+    // ---------------
+    app.post('/adopting', async(req,res)=>{
+        const adoptingData = req.body;
+        const result =await adoptingCollection.insertOne(adoptingData);
         res.send(result)
     })
     
