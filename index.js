@@ -55,7 +55,13 @@ async function run() {
         const result = await cursor.toArray();
         res.send(result)
     })
-
+    
+    // ----------------
+    app.get('/adopting/:userId', async(req,res)=>{
+        const {userId}= req.params;
+        const result = await adoptingCollection.find({userId:userId}).toArray();
+        res.send(result)
+    })
     // ---------------
     app.post('/adopting', async(req,res)=>{
         const adoptingData = req.body;
@@ -64,6 +70,9 @@ async function run() {
     })
     
 
+
+
+    // --------------
 
 
     console.log(
