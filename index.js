@@ -53,6 +53,15 @@ async function run() {
       });
       res.send(result);
     });
+    app.patch("/addpet/:id", async (req, res) => {
+      const { id } = req.params;
+      const updatedData = req.body;
+      const result = await petsCollection.updateOne(
+        {_id: new ObjectId(id)},
+        {$set: updatedData}
+      );
+      res.send(result);
+    });
     //  // ----------------
     // app.delete('/adopting/:petId',async(req,res)=>{
     //   const{petId} =req.params;
