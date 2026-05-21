@@ -102,31 +102,37 @@ async function run() {
       res.send(result);
     });
     // -------
-  app.get("/pets", async (req, res) => {
-  const search = req.query.search || "";
+app.get("/pets", async (req, res) => {
+  const searchTerm = req.query.searchTerm || "";
+  const species = req.query.species || "";
 
-  const query = {
-    $or: [
+  const query = {};
+
+  // SEARCH
+  if (searchTerm) {
+    query.$or = [
       {
         petName: {
-          $regex: search,
-          $options: "i",
-        },
-      },
-      {
-        category: {
-          $regex: search,
+          $regex: searchTerm,
           $options: "i",
         },
       },
       {
         breed: {
-          $regex: search,
+          $regex: searchTerm,
           $options: "i",
         },
       },
-    ],
-  };
+      {
+        category: {
+          $regex: searchTerm,
+          $options: "i",
+        },
+      },
+    ];
+  }
+
+  
 
   const result = await petsCollection
     .find(query)
