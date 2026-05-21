@@ -4,17 +4,18 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 dotenv.config();
 const app = express();
 const cors = require("cors");
+const { createRemoteJWKSet } = require("jose-cjs");
 const port = 5000;
 app.use(cors());
 app.use(express.json());
 
-// pets-jungle
-//
 
-const uri =
-  "mongodb+srv://pets-jungle:vvSyNeSAhoBYTG8Y@cluster0.qtracpu.mongodb.net/?appName=Cluster0";
+const uri = process.env.MONGODB_URI;
+const JWKS = createRemoteJWKSet(new URL(`${process.env.CLIENT_URL}/api/auth/jwks`))
+console.log(JWKS);
 
-// Create a MongoClient with a MongoClientOptions object to set the Stable API version
+
+
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -22,6 +23,43 @@ const client = new MongoClient(uri, {
     deprecationErrors: true,
   },
 });
+
+const logger= (req,res,next)=>{
+        next()
+    }
+
+// const verifyToken = async (req, res, next) => {
+//   try {
+//     const authorization = req.headers.authorization;
+
+//     if (!authorization) {
+//       return res.status(401).json({
+//         message: "Unauthorized",
+//       });
+//     }
+
+//     const token = authorization.split(" ")[1];
+
+//     if (!token) {
+//       return res.status(401).json({
+//         message: "No token found",
+//       });
+//     }
+
+//     const { payload } = await jwtVerify(token, JWKS);
+
+//     req.user = payload;
+
+//     next();
+//   } catch (error) {
+//     console.log(error);
+
+//     return res.status(401).json({
+//       message: "Invalid token",
+//     });
+//   }
+// };
+
 
 async function run() {
   try {
@@ -42,6 +80,7 @@ async function run() {
     // -------
     app.post("/addpet", async (req, res) => {
       const addpetData = req.body;
+      console.log(addpetData);
       const result = await petsCollection.insertOne(addpetData);
       res.send(result);
     });
@@ -62,19 +101,40 @@ async function run() {
       );
       res.send(result);
     });
-    //  // ----------------
-    // app.delete('/adopting/:petId',async(req,res)=>{
-    //   const{petId} =req.params;
-    //   const result= await adoptingCollection.deleteOne({_id: new ObjectId(petId)})
-    //   res.send(result)
-    // })
     // -------
-    app.get("/pets", async (req, res) => {
-      const cursor = petsCollection.find();
-      const result = await cursor.toArray();
-      res.send(result);
-    });
-    // -------
+  app.get("/pets", async (req, res) => {
+  const search = req.query.search || "";
+
+  const query = {
+    $or: [
+      {
+        petName: {
+          $regex: search,
+          $options: "i",
+        },
+      },
+      {
+        category: {
+          $regex: search,
+          $options: "i",
+        },
+      },
+      {
+        breed: {
+          $regex: search,
+          $options: "i",
+        },
+      },
+    ],
+  };
+
+  const result = await petsCollection
+    .find(query)
+    .toArray();
+
+  res.send(result);
+});
+    // ----token---
     app.get("/pets/:petId", async (req, res) => {
       const { petId } = req.params;
       const query = { _id: new ObjectId(petId) };
@@ -97,6 +157,7 @@ async function run() {
         .toArray();
       res.send(result);
     });
+  
     // ---------------
     app.post("/adopting", async (req, res) => {
       const adoptingData = req.body;
