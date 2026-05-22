@@ -162,7 +162,22 @@ app.get("/pets", async (req, res) => {
     });
   
     // ---------------
-    
+    // ---------------
+app.post("/adopting", async (req, res) => {
+  try {
+    const adoptingData = req.body;
+
+    const result = await adoptingCollection.insertOne(adoptingData);
+
+    res.send(result);
+  } catch (error) {
+    console.log(error);
+
+    res.status(500).send({
+      message: "Failed to create adoption request",
+    });
+  }
+});
     // ----------------
     app.delete("/adopting/:petId", async (req, res) => {
       const { petId } = req.params;
