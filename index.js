@@ -12,7 +12,7 @@ app.use(express.json());
 
 const uri = process.env.MONGODB_URI;
 const JWKS = createRemoteJWKSet(new URL(`${process.env.CLIENT_URL}/api/auth/jwks`))
-console.log(JWKS);
+// console.log(JWKS);
 
 
 
@@ -24,47 +24,44 @@ const client = new MongoClient(uri, {
   },
 });
 
-const logger= (req,res,next)=>{
-        next()
+
+const verifyToken = async (req, res, next) => {
+  try {
+    const authorization = req.headers.authorization;
+
+    if (!authorization) {
+      return res.status(401).json({
+        message: "Unauthorized",
+      });
     }
 
-// const verifyToken = async (req, res, next) => {
-//   try {
-//     const authorization = req.headers.authorization;
+    const token = authorization.split(" ")[1];
 
-//     if (!authorization) {
-//       return res.status(401).json({
-//         message: "Unauthorized",
-//       });
-//     }
+    if (!token) {
+      return res.status(401).json({
+        message: "No token found",
+      });
+    }
 
-//     const token = authorization.split(" ")[1];
+    const { payload } = await jwtVerify(token, JWKS);
 
-//     if (!token) {
-//       return res.status(401).json({
-//         message: "No token found",
-//       });
-//     }
+    req.user = payload;
 
-//     const { payload } = await jwtVerify(token, JWKS);
+    next();
+  } catch (error) {
+    console.log(error);
 
-//     req.user = payload;
-
-//     next();
-//   } catch (error) {
-//     console.log(error);
-
-//     return res.status(401).json({
-//       message: "Invalid token",
-//     });
-//   }
-// };
+    return res.status(401).json({
+      message: "Invalid token",
+    });
+  }
+};
 
 
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
 
@@ -141,7 +138,7 @@ app.get("/pets", async (req, res) => {
   res.send(result);
 });
     // ----token---
-    app.get("/pets/:petId", async (req, res) => {
+    app.get("/pets/:petId",verifyToken, async (req, res) => {
       const { petId } = req.params;
       const query = { _id: new ObjectId(petId) };
       const result = await petsCollection.findOne(query);
@@ -165,11 +162,7 @@ app.get("/pets", async (req, res) => {
     });
   
     // ---------------
-    app.post("/adopting", async (req, res) => {
-      const adoptingData = req.body;
-      const result = await adoptingCollection.insertOne(adoptingData);
-      res.send(result);
-    });
+    
     // ----------------
     app.delete("/adopting/:petId", async (req, res) => {
       const { petId } = req.params;
